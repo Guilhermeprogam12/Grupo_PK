@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Shineray PK Motors </title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root { --red: #ff0000; --gray: #000000; --border: #000000; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gray); display: flex; flex-direction: column; height: 100vh; }
+        
+        header { background: rgb(0, 0, 0); border-bottom: 3px solid var(--red); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .logo { height: 45px; }
+
+        .main { display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 20px; flex: 1; overflow: hidden; }
+        .card { background: #ff0000; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+        .card-header { padding: 15px; background: #ff0000; border-bottom: 1px solid var(--border); font-weight: bold; }
+        
+       
+        #contactList { overflow-y: auto; flex: 1; padding: 5px; contain: content; }
+        .contact-item { padding: 10px; border-bottom: 1px solid #ff0000; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .contact-item:hover { background: #000000; }
+
+  
+        .composer { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        textarea { height: 150px; resize: none; }
+        
+        .btn { background: var(--red); color: rgb(0, 0, 0); border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn:disabled { background: #000000; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { background: #000000; }
+
+        .vars { display: flex; gap: 8px; margin-bottom: 5px; }
+        .var-btn { background: rgb(0, 0, 0)e2e; border: 1px solid #ff0000; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .contact-item:hover { background: #000000; }
+
+  
+        .composer { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        textarea { height: 150px; resize: none; }
+        
+        .btn { background: var(--red); color: rgb(255, 0, 0); border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn:disabled { background: #000000; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { background: #000000; }
+
+        .vars { display: flex; gap: 8px; margin-bottom: 5px; }
+        .var-btn { background: rgb(0, 0, 0)e2e; border: 1px solid #ff0000; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+
+        #log { color:#000000 font-weight: bold; text-align: center; margin-top: 10px; min-height: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="data:image/png;base64,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" class="logo">
+    <div id="status" style="font-weight: bold; color: #ff0000;">Iniciando Sistema...</div>
+</header>
+
+<div class="main">
+    <div class="card">
+        <div class="card-header">
+           Agenda de contatos
+            <input type="text" id="search" placeholder=" Filtrar por nome..." style="margin-top:10px; padding: 8px;">
+        </div>
+        <div id="contactList" style="font-weight: bold; color: #000000;">Aguardando Conexão</div>
+    </div>
+    <div class="card">
+        <div class="composer">
+            <img id="qrImg">
+            
+            <div style="background: #ff0000; padding: 15px; border-radius: 8px; border: 1px solid #000000;">
+                <label style="font-weight: bold; color: #000000; font-size: 12px; display: block; margin-bottom: 5px;">NÚMERO MANUAL (DDD + NÚMERO):</label>
+                <input type="text" id="manualNum" placeholder="Ex: 5516999999999">
+            </div>
+
+            <div>
+                <div class="vars">
+                    <button class="var-btn" onclick="addVar('{nome}')"> Inserir {nome}</button>
+                </div>
+                <textarea id="msg" placeholder="Olá {nome}, confira as ofertas da Shineray PK Motors!"></textarea>
+            </div>
+
+            <div style="font-size: 13px; background: #ff0000; padding: 10px; border-radius: 6px;">
+                <b>Foto do Produto:</b> <input type="file" id="fileInp" accept="image/*">
+            </div>
+
+            <button class="btn" id="sendBtn" disabled onclick="executarBlast()"> INICIAR DISPARO</button>
+            <div id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let mediaData = null;
+    let agendaCompleta = [];
+    let selecionadosGlobal = new Set(); // Guarda os IDs selecionados para não perder na busca
+    let searchTimeout;
+
+    socket.on('qr', url => {
+        const img = document.getElementById('qrImg');
+        img.src = url; img.style.display = 'block';
+        document.getElementById('status').innerText = 'Escaneie o QR Code no seu WhatsApp';
+    });
+
+    socket.on('ready', () => {
+        document.getElementById('qrImg').style.display = 'none';
+        document.getElementById('status').innerText = ' WHATSAPP CONECTADO';
+        document.getElementById('status').style.color = 'green';
+        document.getElementById('sendBtn').disabled = false;
+        carregarAgenda();
+    });
+
+    async function carregarAgenda() {
+        try {
+            const res = await fetch('/contacts');
+            agendaCompleta = await res.json();
+            renderizarContatos(agendaCompleta);
+        } catch (e) {
+            document.getElementById('contactList').innerText = "Erro ao carregar contatos.";
+        }
+    }
+
+    // Gerencia a seleção dos contatos
+    function toggleSelecao(checkbox) {
+        if (checkbox.checked) {
+            selecionadosGlobal.add(checkbox.value);
+        } else {
+            selecionadosGlobal.delete(checkbox.value);
+        }
+    }
+
+    // Renderização em massa corrigida
+    function renderizarContatos(lista) {
+        const listDiv = document.getElementById('contactList');
+        const html = lista.map(c => {
+            // Verifica se o contato já estava selecionado antes de renderizar
+            const isChecked = selecionadosGlobal.has(c.id) ? 'checked' : '';
+            return `
+                <div class="contact-item">
+                    <input type="checkbox" value="${c.id}" data-name="${c.name}" ${isChecked} onchange="toggleSelecao(this)">
+                    <span>${c.name}</span>
+                </div>
+            `;
+        }).join('');
+        listDiv.innerHTML = html;
+    }
+
+    // Busca ultra-rápida com Debounce
+    document.getElementById('search').addEventListener('input', function() {
+        const termo = this.value.toLowerCase();
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const filtrados = agendaCompleta.filter(c => c.name.toLowerCase().includes(termo));
+            renderizarContatos(filtrados);
+        }, 150);
+    });
+
+    function addVar(v) {
+        const area = document.getElementById('msg');
+        area.value += v;
+        area.focus();
+    }
+
+    document.getElementById('fileInp').onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => mediaData = { data: ev.target.result.split(',')[1], mimetype: file.type, filename: file.name };
+        reader.readAsDataURL(file);
+    };
+
+    async function executarBlast() {
+        const manual = document.getElementById('manualNum').value.trim();
+        const msgBase = document.getElementById('msg').value;
+        const btn = document.getElementById('sendBtn');
+        const logDiv = document.getElementById('log');
+
+        btn.disabled = true;
+
+        const disparar = async (num, texto) => {
+            return fetch('/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ number: num, message: texto, media: mediaData })
+            });
+        };
+
+        if (manual !== "") {
+            logDiv.innerText = "Enviando para número manual...";
+            await disparar(manual, msgBase.replace('{nome}', 'Cliente'));
+            logDiv.innerText = " Envio manual finalizado!";
+        } else {
+            // Agora pegamos os dados direto do selecionadosGlobal
+            if (selecionadosGlobal.size === 0) {
+                alert('Selecione os clientes na lista!');
+                btn.disabled = false;
+                return;
+            }
+
+            const listaDeEnvio = Array.from(selecionadosGlobal);
+            
+            for (let i = 0; i < listaDeEnvio.length; i++) {
+                const idContato = listaDeEnvio[i];
+                // Busca o nome correspondente na agenda completa
+                const contato = agendaCompleta.find(c => c.id === idContato);
+                const nome = contato ? contato.name : 'Cliente';
+                
+                logDiv.innerText = `Enviando ${i + 1} de ${listaDeEnvio.length} para ${nome}...`;
+                
+                await disparar(idContato, msgBase.replace('{nome}', nome));
+
+                // Delay Humano Aleatório (3 a 10 segundos)
+                if (i < listaDeEnvio.length - 1) {
+                    const delay = Math.floor(Math.random() * (10 - 3 + 1) + 3) * 1000;
+                    logDiv.innerText = `Simulando humano: aguardando ${delay/1000}s...`;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+            logDiv.innerText = " Todos os envios concluídos!";
+        }
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>
